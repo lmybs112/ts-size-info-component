@@ -132,10 +132,10 @@
 
 // 線上資源配置
 const ONLINE_RESOURCES = {
-    apiManager: './api-manager.js',
-    component: './index.js'
-    // apiManager: 'https://ts-size-info-component.vercel.app/api-manager.js',
-    // component: 'https://ts-size-info-component.vercel.app/index.js'
+    // apiManager: './api-manager.js',
+    // component: './index.js'
+    apiManager: 'https://ts-size-info-component.vercel.app/api-manager.js',
+    component: 'https://ts-size-info-component.vercel.app/index.js'
 };
 
 // 默認配置
@@ -147,7 +147,7 @@ const DEFAULT_CONFIG = {
             id: '.ProductDetail-description-title',
             collapsible: true,
             defaultStates: {
-                sizeTable: true,        // 尺寸表預設展開
+                sizeTable: false,        // 尺寸表預設展開
                 tryonReport: false,     // 試穿資訊預設收合
                 attributes: false       // 商品屬性預設收合
             },
