@@ -1823,7 +1823,15 @@ letter-spacing: 0.64px;
     svg_display(apiData) {
         const resize_svg = (data, Labels) => {
             const svgContainer = this.shadowRoot.getElementById('svgContainer');
-            const squaresize = this.shadowRoot.getElementById('svgContainer').offsetWidth;
+            let squaresize = svgContainer ? svgContainer.offsetWidth : 0;
+            
+            // 如果容器寬度為 0，使用預設寬度
+            if (squaresize === 0) {
+                console.log('SVG 容器寬度為 0，使用預設寬度 300px');
+                squaresize = 300;
+            }
+            
+            console.log('SVG 渲染尺寸:', squaresize, 'px');
 
             const derive_svg_circum = (svg_data, a, b, centerX, centerY) => {
                 let pathData = `M ${centerX} ${centerY - b} ` +
@@ -2082,54 +2090,98 @@ letter-spacing: 0.64px;
                 svgSizeElement.style.display = 'flex';
             }
 
-            // 等待更長時間確保所有元素都創建完成
-            setTimeout(() => {
-                const firstSizeBtn = this.shadowRoot.querySelector('.size-btn');
-                if (firstSizeBtn) {
-                    // 手動觸發第一個按鈕的點擊邏輯，而不是依賴 click 事件
-                    const sizeBtns = this.shadowRoot.querySelectorAll('.size-btn');
+            // 檢查 SVG 容器是否可見，如果不可見則延遲初始化
+            const checkAndInitializeSVG = () => {
+                const svgContainer = this.shadowRoot.getElementById('svgContainer');
+                if (!svgContainer) return;
 
-                    // 設置第一個按鈕為 active
-                    sizeBtns.forEach(b => {
-                        this.removeClass(b, 'active');
-                        this.removeClass(b, 'choosed');
-                    });
-                    this.addClass(firstSizeBtn, 'active');
-                    this.addClass(firstSizeBtn, 'choosed');
-
-                    // 手動執行 SVG 更新邏輯
-                    const activeIndex = 0;
-                    const size_active = firstSizeBtn.querySelector('td:first-child') ? firstSizeBtn.querySelector('td:first-child').textContent : firstSizeBtn.textContent;
-
-                    const svgSizeSpan = this.shadowRoot.querySelector('#svg_size span');
-                    if (svgSizeSpan) {
-                        svgSizeSpan.textContent = size_active;
+                const containerWidth = svgContainer.offsetWidth;
+                
+                // 如果容器寬度為 0，表示可能被收合了，需要等待展開
+                if (containerWidth === 0) {
+                    console.log('SVG 容器寬度為 0，等待尺寸表展開後重新初始化');
+                    
+                    // 監聽尺寸表的展開事件
+                    const sizeTableContent = this.shadowRoot.querySelector('.size-table-content');
+                    if (sizeTableContent) {
+                        const observer = new MutationObserver((mutations) => {
+                            mutations.forEach((mutation) => {
+                                if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                                    const target = mutation.target;
+                                    if (target.classList.contains('show')) {
+                                        console.log('尺寸表已展開，重新初始化 SVG');
+                                        observer.disconnect();
+                                        // 延遲一下確保動畫完成
+                                        setTimeout(() => {
+                                            checkAndInitializeSVG();
+                                        }, 300);
+                                    }
+                                }
+                            });
+                        });
+                        
+                        observer.observe(sizeTableContent, {
+                            attributes: true,
+                            attributeFilter: ['class']
+                        });
                     }
+                    return;
+                }
 
-                    const sizeBtnWrapper = this.shadowRoot.querySelector('.size-btn-wrapper');
-                    if (sizeBtnWrapper) {
-                        const dataname_list = sizeBtnWrapper.getAttribute('data-labels').split(',');
+                console.log('SVG 容器寬度:', containerWidth, 'px，開始初始化 SVG');
 
-                        for (let gs = 1; gs < Object.keys(global_sizeinfo[0]).length; gs++) {
-                            let size_header = Object.keys(global_sizeinfo[0])[gs];
-                            if (dataname_list.includes(mapMeasurement(size_header))) {
-                                output_svg.data[mapMeasurement(size_header)].value = global_sizeinfo[activeIndex][size_header];
-                            }
+                // 等待更長時間確保所有元素都創建完成
+                setTimeout(() => {
+                    const firstSizeBtn = this.shadowRoot.querySelector('.size-btn');
+                    if (firstSizeBtn) {
+                        // 手動觸發第一個按鈕的點擊邏輯，而不是依賴 click 事件
+                        const sizeBtns = this.shadowRoot.querySelectorAll('.size-btn');
+
+                        // 設置第一個按鈕為 active
+                        sizeBtns.forEach(b => {
+                            this.removeClass(b, 'active');
+                            this.removeClass(b, 'choosed');
+                        });
+                        this.addClass(firstSizeBtn, 'active');
+                        this.addClass(firstSizeBtn, 'choosed');
+
+                        // 手動執行 SVG 更新邏輯
+                        const activeIndex = 0;
+                        const size_active = firstSizeBtn.querySelector('td:first-child') ? firstSizeBtn.querySelector('td:first-child').textContent : firstSizeBtn.textContent;
+
+                        const svgSizeSpan = this.shadowRoot.querySelector('#svg_size span');
+                        if (svgSizeSpan) {
+                            svgSizeSpan.textContent = size_active;
                         }
 
-                        // 強制重新渲染 SVG
-                        output_svg = resize_svg(output_svg.data, output_svg.Labels);
+                        const sizeBtnWrapper = this.shadowRoot.querySelector('.size-btn-wrapper');
+                        if (sizeBtnWrapper) {
+                            const dataname_list = sizeBtnWrapper.getAttribute('data-labels').split(',');
 
-                        // 確保 SVG 文字顯示
-                        setTimeout(() => {
-                            const svgText = this.shadowRoot.querySelectorAll('#svgContainer text');
-                            svgText.forEach(text => {
-                                text.style.display = '';
-                            });
-                        }, 100);
+                            for (let gs = 1; gs < Object.keys(global_sizeinfo[0]).length; gs++) {
+                                let size_header = Object.keys(global_sizeinfo[0])[gs];
+                                if (dataname_list.includes(mapMeasurement(size_header))) {
+                                    output_svg.data[mapMeasurement(size_header)].value = global_sizeinfo[activeIndex][size_header];
+                                }
+                            }
+
+                            // 強制重新渲染 SVG
+                            output_svg = resize_svg(output_svg.data, output_svg.Labels);
+
+                            // 確保 SVG 文字顯示
+                            setTimeout(() => {
+                                const svgText = this.shadowRoot.querySelectorAll('#svgContainer text');
+                                svgText.forEach(text => {
+                                    text.style.display = '';
+                                });
+                            }, 100);
+                        }
                     }
-                }
-            }, 800); // 增加等待時間
+                }, 200);
+            };
+
+            // 開始檢查和初始化
+            checkAndInitializeSVG();
         };
 
         // 為尺寸按鈕添加點擊事件（需要在 size table 創建後執行）
@@ -2463,6 +2515,13 @@ letter-spacing: 0.64px;
             this.simpleShow(contentElement);
             toggleBtn.setAttribute('aria-expanded', 'true');
             toggleBtn.setAttribute('aria-label', `收合${sectionName}`);
+            
+            // 如果是尺寸表展開，需要重新初始化 SVG
+            if (sectionName === '尺寸表') {
+                setTimeout(() => {
+                    this.reinitializeSVGIfNeeded();
+                }, 350); // 等待展開動畫完成
+            }
         } else {
             // 收合動畫 - 使用簡化邏輯
             this.simpleHide(contentElement);
@@ -2652,6 +2711,32 @@ letter-spacing: 0.64px;
     }
 
     // SizeTable Display methods
+
+    /**
+     * 重新初始化 SVG（如果需要）
+     */
+    reinitializeSVGIfNeeded() {
+        const svgContainer = this.shadowRoot.getElementById('svgContainer');
+        if (!svgContainer) return;
+
+        const containerWidth = svgContainer.offsetWidth;
+        console.log('重新檢查 SVG 容器寬度:', containerWidth, 'px');
+
+        // 如果容器現在有寬度，但 SVG 內容為空或不正確，重新渲染
+        if (containerWidth > 0) {
+            const existingSVG = svgContainer.querySelector('svg');
+            if (!existingSVG || existingSVG.getAttribute('width') === '0') {
+                console.log('重新渲染 SVG');
+                
+                // 觸發 SVG 重新初始化
+                if (this.initializeSVGDisplay) {
+                    this.initializeSVGDisplay();
+                }
+            }
+        }
+    }
+
+    // 簡化的展開動畫 - 基於用戶提供的參照邏輯
 }
 
 // 註冊自定義元素
