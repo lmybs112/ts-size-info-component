@@ -219,13 +219,21 @@ class InfoDisplayComponent extends HTMLElement {
             const sizeTableContent = this.shadowRoot.querySelector('.size-table-content');
 
             if (headerElement && sizeTableContent) {
-                // 初始化內容狀態 - 尺寸表預設展開
-                this.initializeContentState(sizeTableContent, true);
+                // 檢查是否有外部配置的初始狀態
+                const initialStates = this._initialStates || {
+                    sizeTable: true,        // 尺寸表預設展開
+                    tryonReport: false,     // 試穿資訊預設收合
+                    attributes: false       // 商品屬性預設收合
+                };
+
+                // 使用配置的狀態進行初始化，避免閃爍
+                this.initializeContentState(sizeTableContent, initialStates.sizeTable);
 
                 // 設置初始按鈕內容和狀態
                 if (toggleBtn) {
                     toggleBtn.innerHTML = this.getArrowIcon();
-                    toggleBtn.setAttribute('aria-expanded', 'true');
+                    toggleBtn.setAttribute('aria-expanded', initialStates.sizeTable ? 'true' : 'false');
+                    toggleBtn.setAttribute('aria-label', initialStates.sizeTable ? '收合尺寸表' : '展開尺寸表');
                 }
 
                 // 為整個 h5 標題添加點擊事件
@@ -623,14 +631,6 @@ class InfoDisplayComponent extends HTMLElement {
     #inffits-info-display-reference-component .sizeinfo-col {
         position: relative; 
     }
-
-
-#inffits-info-display-reference-component .size-table-content{
-   display: flex;
-   flex-direction: column;
-   gap: 12px;
-}
-
 
 #inffits-info-display-reference-component #svg_size {
         right: 10px;
@@ -1129,17 +1129,28 @@ letter-spacing: 0.64px;
 #inffits-info-display-reference-component[data-collapsible="true"] .size-table-content,
 #inffits-info-display-reference-component[data-collapsible="true"] .tryon-report-content,
 #inffits-info-display-reference-component[data-collapsible="true"] .attributes-content {
-    transition: height 0.2s ease-out;
+    transition: height 0.25s ease-out;
     border-bottom: 1px solid #dee2e6;
     padding-bottom: 20px;
-    contain: layout; /* 隔離重排 */
+    overflow: hidden;
 }
 
-/* 所有內容區域統一使用 hidden - 只在有折疊功能時應用 */
-#inffits-info-display-reference-component[data-collapsible="true"] .size-table-content,
-#inffits-info-display-reference-component[data-collapsible="true"] .tryon-report-content,
-#inffits-info-display-reference-component[data-collapsible="true"] .attributes-content {
+/* 簡化的折疊狀態 - 只在有折疊功能時應用 */
+#inffits-info-display-reference-component[data-collapsible="true"] .size-table-content.collapse,
+#inffits-info-display-reference-component[data-collapsible="true"] .tryon-report-content.collapse,
+#inffits-info-display-reference-component[data-collapsible="true"] .attributes-content.collapse {
+    height: 0;
+    padding-bottom: 0;
+    border-bottom: none;
     overflow: hidden;
+}
+
+/* 展開狀態 - 只在有折疊功能時應用 */
+#inffits-info-display-reference-component[data-collapsible="true"] .size-table-content.show,
+#inffits-info-display-reference-component[data-collapsible="true"] .tryon-report-content.show,
+#inffits-info-display-reference-component[data-collapsible="true"] .attributes-content.show {
+    /* height 將由 JavaScript 動態控制 */
+    overflow: visible;
 }
 
 #inffits-info-display-reference-component[data-collapsible="true"] .size-table-content.collapsing,
@@ -1771,13 +1782,21 @@ letter-spacing: 0.64px;
                 const tryonReportContent = this.shadowRoot.querySelector('.tryon-report-content');
 
                 if (headerElement && tryonReportContent) {
-                    // 初始化內容狀態 - 試穿資訊預設收合
-                    this.initializeContentState(tryonReportContent, false);
+                    // 檢查是否有外部配置的初始狀態
+                    const initialStates = this._initialStates || {
+                        sizeTable: true,
+                        tryonReport: false,
+                        attributes: false
+                    };
+
+                    // 使用配置的狀態進行初始化，避免閃爍
+                    this.initializeContentState(tryonReportContent, initialStates.tryonReport);
 
                     // 設置初始按鈕內容和狀態
                     if (toggleBtn) {
                         toggleBtn.innerHTML = this.getArrowIcon();
-                        toggleBtn.setAttribute('aria-expanded', 'false');
+                        toggleBtn.setAttribute('aria-expanded', initialStates.tryonReport ? 'true' : 'false');
+                        toggleBtn.setAttribute('aria-label', initialStates.tryonReport ? '收合試穿資訊' : '展開試穿資訊');
                     }
 
                     // 為整個 h5 標題添加點擊事件
@@ -2226,13 +2245,21 @@ letter-spacing: 0.64px;
                 const attributesContent = this.shadowRoot.querySelector('.attributes-content');
 
                 if (headerElement && attributesContent) {
-                    // 初始化內容狀態 - 商品屬性預設收合
-                    this.initializeContentState(attributesContent, false);
+                    // 檢查是否有外部配置的初始狀態
+                    const initialStates = this._initialStates || {
+                        sizeTable: true,
+                        tryonReport: false,
+                        attributes: false
+                    };
+
+                    // 使用配置的狀態進行初始化，避免閃爍
+                    this.initializeContentState(attributesContent, initialStates.attributes);
 
                     // 設置初始按鈕內容和狀態
                     if (toggleBtn) {
                         toggleBtn.innerHTML = this.getArrowIcon();
-                        toggleBtn.setAttribute('aria-expanded', 'false');
+                        toggleBtn.setAttribute('aria-expanded', initialStates.attributes ? 'true' : 'false');
+                        toggleBtn.setAttribute('aria-label', initialStates.attributes ? '收合商品屬性' : '展開商品屬性');
                     }
 
                     // 為整個 h5 標題添加點擊事件
@@ -2355,8 +2382,24 @@ letter-spacing: 0.64px;
             collapseButton.id = buttonId;
             collapseButton.className = 'collapse-btn';
 
-            // 根據區塊類型設置不同的預設狀態
-            const isDefaultExpanded = sectionName === '尺寸表';
+            // 檢查是否有外部配置的初始狀態
+            const initialStates = this._initialStates || {
+                sizeTable: true,
+                tryonReport: false,
+                attributes: false
+            };
+
+            // 根據區塊類型和外部配置設置狀態
+            let isDefaultExpanded;
+            if (sectionName === '尺寸表') {
+                isDefaultExpanded = initialStates.sizeTable;
+            } else if (sectionName === '試穿資訊') {
+                isDefaultExpanded = initialStates.tryonReport;
+            } else if (sectionName === '商品屬性') {
+                isDefaultExpanded = initialStates.attributes;
+            } else {
+                isDefaultExpanded = false; // 未知區塊預設收合
+            }
 
             collapseButton.innerHTML = this.getArrowIcon();
 
@@ -2416,114 +2459,129 @@ letter-spacing: 0.64px;
         }
 
         if (isCollapsed) {
-            // 展開動畫
-            this.show(contentElement);
+            // 展開動畫 - 使用簡化邏輯
+            this.simpleShow(contentElement);
             toggleBtn.setAttribute('aria-expanded', 'true');
             toggleBtn.setAttribute('aria-label', `收合${sectionName}`);
         } else {
-            // 收合動畫
-            this.hide(contentElement);
+            // 收合動畫 - 使用簡化邏輯
+            this.simpleHide(contentElement);
             toggleBtn.setAttribute('aria-expanded', 'false');
             toggleBtn.setAttribute('aria-label', `展開${sectionName}`);
         }
     }
 
-    // 超級簡化的展開動畫 - 無卡頓版本
-    show(element) {
-        if (element.classList.contains('collapsing') || element.classList.contains('show')) {
+    // 簡化的展開動畫 - 基於用戶提供的參照邏輯
+    simpleShow(element) {
+        if (element.classList.contains('show')) {
             return;
         }
 
-        // 清理
-        const existingListeners = element._transitionEndListener;
-        if (existingListeners) {
-            element.removeEventListener('transitionend', existingListeners);
+        // 清理可能存在的事件監聽器
+        if (element._currentTransitionHandler) {
+            element.removeEventListener('transitionend', element._currentTransitionHandler);
+            element._currentTransitionHandler = null;
         }
 
-        element.classList.remove('collapse');
-        element.classList.add('collapsing');
-
-        // 緩存高度，避免重複 scrollHeight 計算
-        if (!element._cachedHeight) {
-            element.style.height = 'auto';
-            element._cachedHeight = element.scrollHeight;
-        }
-
+        // 先讓元素可見但高度為0
         element.style.height = '0px';
+        element.style.overflow = 'hidden';
+        element.classList.remove('collapse');
+        element.classList.add('show');
 
-        // 直接設置目標高度，不用 requestAnimationFrame
-        setTimeout(() => {
-            element.style.height = element._cachedHeight + 'px';
-        }, 10);
+        // 獲取內容的實際高度
+        const targetHeight = element.scrollHeight;
 
-        const transitionEnd = () => {
-            element.classList.remove('collapsing');
-            element.classList.add('collapse', 'show');
-            element.style.height = '';
-            element.removeEventListener('transitionend', transitionEnd);
-            element._transitionEndListener = null;
-        };
+        // 立即開始展開動畫
+        requestAnimationFrame(() => {
+            element.style.height = targetHeight + 'px';
+            
+            // 動畫結束後設為 auto
+            const transitionHandler = () => {
+                element.style.height = 'auto';
+                element.style.overflow = '';
+                element.removeEventListener('transitionend', transitionHandler);
+                element._currentTransitionHandler = null;
+            };
+            
+            element.addEventListener('transitionend', transitionHandler, { once: true });
+            element._currentTransitionHandler = transitionHandler;
+            
+            // 備用處理（防止 transitionend 事件丟失）
+            setTimeout(() => {
+                if (element._currentTransitionHandler) {
+                    transitionHandler();
+                }
+            }, 300);
+        });
+    }
 
-        element.addEventListener('transitionend', transitionEnd);
-        element._transitionEndListener = transitionEnd;
+    // 簡化的收合動畫 - 基於用戶提供的參照邏輯
+    simpleHide(element) {
+        if (!element.classList.contains('show')) {
+            return;
+        }
 
-        // 備用處理
-        setTimeout(() => {
-            if (element.classList.contains('collapsing')) {
-                transitionEnd();
-            }
-        }, 250);
+        // 清理可能存在的事件監聽器
+        if (element._currentTransitionHandler) {
+            element.removeEventListener('transitionend', element._currentTransitionHandler);
+            element._currentTransitionHandler = null;
+        }
+
+        // 先設置為實際高度
+        element.style.height = element.scrollHeight + 'px';
+        element.style.overflow = 'hidden';
+
+        // 立即開始收合動畫
+        requestAnimationFrame(() => {
+            element.style.height = '0px';
+            
+            const transitionHandler = () => {
+                element.classList.remove('show');
+                element.classList.add('collapse');
+                element.style.height = '';
+                element.style.overflow = '';
+                element.removeEventListener('transitionend', transitionHandler);
+                element._currentTransitionHandler = null;
+            };
+            
+            element.addEventListener('transitionend', transitionHandler, { once: true });
+            element._currentTransitionHandler = transitionHandler;
+            
+            // 備用處理（防止 transitionend 事件丟失）
+            setTimeout(() => {
+                if (element._currentTransitionHandler) {
+                    transitionHandler();
+                }
+            }, 300);
+        });
+    }
+
+    // 超級簡化的展開動畫 - 無卡頓版本
+    show(element) {
+        // 使用新的簡化邏輯
+        this.simpleShow(element);
     }
 
     // 超級簡化的收合動畫 - 無卡頓版本
     hide(element) {
-        if (element.classList.contains('collapsing') || !element.classList.contains('show')) {
-            return;
-        }
-
-        // 清理
-        const existingListeners = element._transitionEndListener;
-        if (existingListeners) {
-            element.removeEventListener('transitionend', existingListeners);
-        }
-
-        // 使用緩存的高度
-        if (!element._cachedHeight) {
-            element._cachedHeight = element.scrollHeight;
-        }
-
-        element.style.height = element._cachedHeight + 'px';
-
-        setTimeout(() => {
-            element.classList.remove('collapse', 'show');
-            element.classList.add('collapsing');
-            element.style.height = '0px';
-        }, 10);
-
-        const transitionEnd = () => {
-            element.classList.remove('collapsing');
-            element.classList.add('collapse');
-            element.style.height = '';
-            element.removeEventListener('transitionend', transitionEnd);
-            element._transitionEndListener = null;
-        };
-
-        element.addEventListener('transitionend', transitionEnd);
-        element._transitionEndListener = transitionEnd;
-
-        setTimeout(() => {
-            if (element.classList.contains('collapsing')) {
-                transitionEnd();
-            }
-        }, 250);
+        // 使用新的簡化邏輯
+        this.simpleHide(element);
     }
 
-    // 初始化內容區域狀態 - Bootstrap 風格
+    // 初始化內容區域狀態 - 簡化版本
     initializeContentState(contentElement, isDefaultExpanded = false) {
+        // 清除所有可能的類和樣式
+        contentElement.classList.remove('collapse', 'show', 'collapsing');
+        contentElement.style.height = '';
+        contentElement.style.overflow = '';
+        
         if (isDefaultExpanded) {
-            contentElement.classList.add('collapse', 'show');
+            contentElement.classList.add('show');
         } else {
             contentElement.classList.add('collapse');
+            contentElement.style.height = '0px';
+            contentElement.style.overflow = 'hidden';
         }
     }
 

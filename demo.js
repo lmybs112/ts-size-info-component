@@ -7,6 +7,51 @@
  */
 
 /**
+ * 折疊狀態配置說明：
+ * 
+ * 當 collapsible 為 true 時，可以設定 defaultStates 來控制每個區塊的預設展開/收合狀態：
+ * 
+ * defaultStates: {
+ *     sizeTable: true,        // 尺寸表預設展開
+ *     tryonReport: false,     // 試穿資訊預設收合  
+ *     attributes: false       // 商品屬性預設收合
+ * }
+ * 
+ * 如果沒有設定 defaultStates，則使用以下預設值：
+ * - 尺寸表：展開 (true)
+ * - 試穿資訊：收合 (false)
+ * - 商品屬性：收合 (false)
+ * 
+ * 配置範例：
+ * 
+ * 1. 全部展開：
+ *    defaultStates: {
+ *        sizeTable: true,
+ *        tryonReport: true,
+ *        attributes: true
+ *    }
+ * 
+ * 2. 全部收合：
+ *    defaultStates: {
+ *        sizeTable: false,
+ *        tryonReport: false,
+ *        attributes: false
+ *    }
+ * 
+ * 3. 只展開試穿資訊：
+ *    defaultStates: {
+ *        sizeTable: false,
+ *        tryonReport: true,
+ *        attributes: false
+ *    }
+ * 
+ * 4. 部分設定（未設定的使用預設值）：
+ *    defaultStates: {
+ *        tryonReport: true    // 只設定試穿資訊展開，其他使用預設值
+ *    }
+ */
+
+/**
  * 插入選項使用範例：
  * 
  * 1. 基本插入（默認 append）:
@@ -49,10 +94,48 @@
  *    }
  */
 
+/**
+ * 完整配置範例：
+ * 
+ * const customConfig = {
+ *     clothID: 'INFS_20240507MT2749',
+ *     brand: 'INFS',
+ *     loadMethod: 'idle',  // 'standard' | 'deferred' | 'idle'
+ *     containers: [
+ *         {
+ *             id: '.ProductDetail-description-title',
+ *             collapsible: true,
+ *             defaultStates: {
+ *                 sizeTable: true,        // 尺寸表展開
+ *                 tryonReport: true,      // 試穿資訊展開  
+ *                 attributes: false       // 商品屬性收合
+ *             },
+ *             insertOptions: {
+ *                 position: 'insertAfter',
+ *                 clearContainer: false
+ *             }
+ *         },
+ *         {
+ *             id: '.ProductDetail-relatedProducts',
+ *             collapsible: false,  // 不可折疊時不需要設定 defaultStates
+ *             insertOptions: {
+ *                 position: 'append',
+ *                 clearContainer: false
+ *             }
+ *         }
+ *     ]
+ * };
+ * 
+ * // 使用自定義配置
+ * InfoDisplayDemo.test(customConfig);
+ */
+
 // 線上資源配置
 const ONLINE_RESOURCES = {
-    apiManager: 'https://ts-size-info-component.vercel.app/api-manager.js',
-    component: 'https://ts-size-info-component.vercel.app/index.js'
+    apiManager: './api-manager.js',
+    component: './index.js'
+    // apiManager: 'https://ts-size-info-component.vercel.app/api-manager.js',
+    // component: 'https://ts-size-info-component.vercel.app/index.js'
 };
 
 // 默認配置
@@ -60,15 +143,20 @@ const DEFAULT_CONFIG = {
     clothID: 'INFS_20240507MT2749',
     brand: 'INFS',
     containers: [
-        { 
+        {
             id: '.ProductDetail-description-title',
             collapsible: true,
+            defaultStates: {
+                sizeTable: true,        // 尺寸表預設展開
+                tryonReport: false,     // 試穿資訊預設收合
+                attributes: false       // 商品屬性預設收合
+            },
             insertOptions: {
                 position: 'insertAfter',
                 clearContainer: false
             }
         },
-        { 
+        {
             id: '.ProductDetail-relatedProducts',
             collapsible: false,
             insertOptions: {
@@ -198,6 +286,90 @@ async function loadOnlineResourcesIdle() {
 }
 
 /**
+ * 設定組件的初始折疊狀態
+ * @param {HTMLElement} component - 組件元素
+ * @param {Object} defaultStates - 默認狀態配置
+ */
+function setComponentInitialStates(component, defaultStates = {}) {
+    // 如果沒有設定 defaultStates，使用系統預設值
+    const states = {
+        sizeTable: true,        // 尺寸表預設展開
+        tryonReport: false,     // 試穿資訊預設收合
+        attributes: false,      // 商品屬性預設收合
+        ...defaultStates        // 覆蓋用戶設定的值
+    };
+    
+    console.log('設定組件初始狀態:', states);
+    
+    // 將狀態配置傳遞給組件，組件會在初始化時直接使用
+    component._initialStates = states;
+    
+    // 簡單的驗證函數，在組件渲染後檢查狀態是否正確
+    setTimeout(() => {
+        if (component.shadowRoot) {
+            console.log('驗證組件初始狀態...');
+            applyInitialStates(component, states);
+        }
+    }, 500); // 延遲檢查，確保組件完全渲染
+}
+
+/**
+ * 應用初始狀態到組件
+ * @param {HTMLElement} component - 組件元素
+ * @param {Object} states - 狀態配置
+ */
+function applyInitialStates(component, states) {
+    if (!component.shadowRoot) {
+        console.warn('組件 shadowRoot 尚未準備完成');
+        return;
+    }
+    
+    try {
+        // 組件現在會直接使用外部配置的狀態，無需再次設定
+        // 這裡只是驗證狀態是否正確應用
+        
+        // 檢查尺寸表狀態
+        const sizeTableContent = component.shadowRoot.querySelector('.size-table-content');
+        const sizeTableToggle = component.shadowRoot.getElementById('size-table-toggle');
+        if (sizeTableContent && sizeTableToggle) {
+            const isExpanded = sizeTableContent.classList.contains('show');
+            if (isExpanded === states.sizeTable) {
+                console.log(`✓ 尺寸表狀態正確: ${states.sizeTable ? '展開' : '收合'}`);
+            } else {
+                console.warn(`⚠ 尺寸表狀態不匹配，期望: ${states.sizeTable ? '展開' : '收合'}, 實際: ${isExpanded ? '展開' : '收合'}`);
+            }
+        }
+        
+        // 檢查試穿資訊狀態
+        const tryonReportContent = component.shadowRoot.querySelector('.tryon-report-content');
+        const tryonReportToggle = component.shadowRoot.getElementById('tryon-report-toggle');
+        if (tryonReportContent && tryonReportToggle) {
+            const isExpanded = tryonReportContent.classList.contains('show');
+            if (isExpanded === states.tryonReport) {
+                console.log(`✓ 試穿資訊狀態正確: ${states.tryonReport ? '展開' : '收合'}`);
+            } else {
+                console.warn(`⚠ 試穿資訊狀態不匹配，期望: ${states.tryonReport ? '展開' : '收合'}, 實際: ${isExpanded ? '展開' : '收合'}`);
+            }
+        }
+        
+        // 檢查商品屬性狀態
+        const attributesContent = component.shadowRoot.querySelector('.attributes-content');
+        const attributesToggle = component.shadowRoot.getElementById('attributes-toggle');
+        if (attributesContent && attributesToggle) {
+            const isExpanded = attributesContent.classList.contains('show');
+            if (isExpanded === states.attributes) {
+                console.log(`✓ 商品屬性狀態正確: ${states.attributes ? '展開' : '收合'}`);
+            } else {
+                console.warn(`⚠ 商品屬性狀態不匹配，期望: ${states.attributes ? '展開' : '收合'}, 實際: ${isExpanded ? '展開' : '收合'}`);
+            }
+        }
+        
+    } catch (error) {
+        console.error('驗證初始狀態時發生錯誤:', error);
+    }
+}
+
+/**
  * 創建並配置組件
  * @param {Object} data - API 數據
  * @param {Object} config - 組件配置
@@ -209,6 +381,14 @@ function createComponent(data, config = {}) {
     // 設定折疊功能
     if (config.collapsible) {
         component.setAttribute('collapsible', 'true');
+        
+        // 設定初始狀態
+        if (config.defaultStates) {
+            setComponentInitialStates(component, config.defaultStates);
+        } else {
+            // 使用系統預設值
+            setComponentInitialStates(component);
+        }
     }
     
     // 設定數據
@@ -421,7 +601,26 @@ async function test(config = DEFAULT_CONFIG) {
             const success = appendToContainer(component, containerConfig.id, containerConfig.insertOptions);
             if (success) {
                 successCount++;
-                console.log(`組件已添加到 ${containerConfig.id}${containerConfig.collapsible ? ' (可折疊)' : ' (不可折疊)'}`);
+                let statusText = `組件已添加到 ${containerConfig.id}`;
+                
+                if (containerConfig.collapsible) {
+                    statusText += ' (可折疊';
+                    if (containerConfig.defaultStates) {
+                        const states = containerConfig.defaultStates;
+                        const stateInfo = [];
+                        if (states.sizeTable !== undefined) stateInfo.push(`尺寸表:${states.sizeTable ? '展開' : '收合'}`);
+                        if (states.tryonReport !== undefined) stateInfo.push(`試穿資訊:${states.tryonReport ? '展開' : '收合'}`);
+                        if (states.attributes !== undefined) stateInfo.push(`商品屬性:${states.attributes ? '展開' : '收合'}`);
+                        statusText += ` - ${stateInfo.join(', ')}`;
+                    } else {
+                        statusText += ' - 使用預設狀態';
+                    }
+                    statusText += ')';
+                } else {
+                    statusText += ' (不可折疊)';
+                }
+                
+                console.log(statusText);
             }
         }
         
@@ -483,6 +682,8 @@ window.InfoDisplayDemo = {
     loadOnlineResources,
     loadOnlineResourcesDeferred,
     loadOnlineResourcesIdle,
+    setComponentInitialStates,
+    applyInitialStates,
     DEFAULT_CONFIG,
     ONLINE_RESOURCES
 };
