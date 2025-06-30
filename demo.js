@@ -144,7 +144,7 @@ const DEFAULT_CONFIG = {
     brand: 'INFS',
     containers: [
         {
-            id: '.ProductDetail-description-title',
+            id: '.pdcnt_info_size',
             collapsible: true,
             defaultStates: {
                 sizeTable: false,        // 尺寸表預設展開
@@ -157,10 +157,10 @@ const DEFAULT_CONFIG = {
             }
         },
         {
-            id: '.ProductDetail-relatedProducts',
+            id: '#punit_wrapper',
             collapsible: false,
             insertOptions: {
-                position: 'append',
+                position: 'insertBefore',
                 clearContainer: false
             }
         }
