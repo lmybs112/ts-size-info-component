@@ -622,8 +622,11 @@ class InfoDisplayComponent extends HTMLElement {
     /* 其他列最小寬度確保能夠滾動 */
     #inffits-info-display-reference-component .sizetable-demo th:not(:first-child),
     #inffits-info-display-reference-component .sizetable-demo td:not(:first-child) {
-        min-width: 60px;
-        max-width: 110px;
+        max-width: 60px;
+        @media (min-width: 767px) {
+            max-width: 110px;
+        }
+
         white-space: nowrap;
     }
 
