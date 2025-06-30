@@ -337,7 +337,6 @@ class InfoDisplayComponent extends HTMLElement {
         if (containerWidth <= 768) {
             container.classList.add('mobile-layout');
             console.log(`應用移動端佈局 (寬度: ${containerWidth}px)`);
-            
             // 檢查是否需要應用小型尺寸表樣式
             this.checkSmallSizeTableStyle();
         } else {
@@ -1721,20 +1720,26 @@ letter-spacing: 0.64px;
         };
 
         // 創建按鈕但不添加 onclick 屬性
+        let isFirstButton = true;
         if (height_group150down.length) {
-            this.shadowRoot.querySelector('.filter-btn-container').insertAdjacentHTML('beforeend', `<button class="filter-button active" data-range="150d">150 以下</button> `);
+            this.shadowRoot.querySelector('.filter-btn-container').insertAdjacentHTML('beforeend', `<button class="filter-button${isFirstButton ? ' active' : ''}" data-range="150d">150 以下</button> `);
+            isFirstButton = false;
         }
         if (height_group150.length) {
-            this.shadowRoot.querySelector('.filter-btn-container').insertAdjacentHTML('beforeend', `<button class="filter-button" data-range="150">150 ~ 160</button> `);
+            this.shadowRoot.querySelector('.filter-btn-container').insertAdjacentHTML('beforeend', `<button class="filter-button${isFirstButton ? ' active' : ''}" data-range="150">150 ~ 160</button> `);
+            isFirstButton = false;
         }
         if (height_group160.length) {
-            this.shadowRoot.querySelector('.filter-btn-container').insertAdjacentHTML('beforeend', `<button class="filter-button" data-range="160">160 ~ 170</button> `);
+            this.shadowRoot.querySelector('.filter-btn-container').insertAdjacentHTML('beforeend', `<button class="filter-button${isFirstButton ? ' active' : ''}" data-range="160">160 ~ 170</button> `);
+            isFirstButton = false;
         }
         if (height_group170.length) {
-            this.shadowRoot.querySelector('.filter-btn-container').insertAdjacentHTML('beforeend', `<button class="filter-button" data-range="170">170 ~ 180</button> `);
+            this.shadowRoot.querySelector('.filter-btn-container').insertAdjacentHTML('beforeend', `<button class="filter-button${isFirstButton ? ' active' : ''}" data-range="170">170 ~ 180</button> `);
+            isFirstButton = false;
         }
         if (height_group180up.length) {
-            this.shadowRoot.querySelector('.filter-btn-container').insertAdjacentHTML('beforeend', `<button class="filter-button" data-range="180u">180 以上</button> `);
+            this.shadowRoot.querySelector('.filter-btn-container').insertAdjacentHTML('beforeend', `<button class="filter-button${isFirstButton ? ' active' : ''}" data-range="180u">180 以上</button> `);
+            isFirstButton = false;
         }
 
         // 為所有按鈕添加事件監聽器
