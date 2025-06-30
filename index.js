@@ -1613,7 +1613,16 @@ letter-spacing: 0.64px;
             }
 
             // 根據當前選中的身高範圍顯示對應的行
-            const activeHeightBtn = this.shadowRoot.querySelector('.filter-btn-container .active');
+            let activeHeightBtn = this.shadowRoot.querySelector('.filter-btn-container .active');
+            
+            // 如果沒有 active 的按鈕，自動選擇第一個按鈕
+            if (!activeHeightBtn) {
+                activeHeightBtn = this.shadowRoot.querySelector('.filter-btn-container button');
+                if (activeHeightBtn) {
+                    this.addClass(activeHeightBtn, 'active');
+                }
+            }
+
             if (activeHeightBtn) {
                 const heightClass = activeHeightBtn.getAttribute('data-height');
                 const heightRows = table.getElementsByClassName(heightClass);
