@@ -1103,7 +1103,7 @@ letter-spacing: 0.64px;
 }
 
 /* 確保標題行的佈局 - 預設 padding-top 為 0 */
-#inffits-info-display-reference-component .inf-container h5 {
+#inffits-info-display-reference-component #size-table-header h5 {
     padding-bottom: 20px;
     border-bottom: 1px solid #dee2e6;
     padding-top: 0;
