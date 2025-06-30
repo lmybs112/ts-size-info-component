@@ -565,7 +565,7 @@ function waitForContainers(containers, maxWaitTime = 10000) {
  * 主要測試函數
  * @param {Object} config - 配置選項
  */
-async function test(config = DEFAULT_CONFIG) {
+async function initInfoDisplay(config = DEFAULT_CONFIG) {
     try {
         console.log('開始初始化組件系統...');
         
@@ -657,7 +657,7 @@ async function init(options = {}) {
         await waitForContainers(config.containers);
         
         // 執行測試
-        await test(config);
+        await initInfoDisplay(config);
         
     } catch (error) {
         console.error('初始化失敗:', error);
@@ -666,7 +666,7 @@ async function init(options = {}) {
         if (error.message.includes('等待容器超時')) {
             console.warn('容器等待超時，仍嘗試執行測試...');
             try {
-                await test(options);
+                await initInfoDisplay(options);
             } catch (testError) {
                 console.error('強制執行測試也失敗:', testError);
             }
@@ -676,7 +676,7 @@ async function init(options = {}) {
 
 // 導出函數供外部使用
 window.InfoDisplayDemo = {
-    test,
+    initInfoDisplay,
     createComponent,
     appendToContainer,
     loadOnlineResources,
