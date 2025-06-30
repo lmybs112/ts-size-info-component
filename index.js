@@ -622,11 +622,8 @@ class InfoDisplayComponent extends HTMLElement {
     /* 其他列最小寬度確保能夠滾動 */
     #inffits-info-display-reference-component .sizetable-demo th:not(:first-child),
     #inffits-info-display-reference-component .sizetable-demo td:not(:first-child) {
-        max-width: 60px;
-        @media (min-width: 767px) {
-            max-width: 110px;
-        }
-
+        min-width: 60px;
+        max-width: 110px;
         white-space: nowrap;
     }
 
@@ -1587,16 +1584,16 @@ letter-spacing: 0.64px;
             const Cup = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
             const CupV = [0, 2.5, 5, 7.5, 10, 12.5, 15];
 
-        if (showChest) {
+            if (showChest) {
                 keys = ['Name', 'Height', 'Weight', 'Chest', 'size', 'FitP'];
-        } else {
+            } else {
                 keys = ['Name', 'Height', 'Weight', 'size', 'FitP'];
             }
 
             const ResortAvatar = Avatar;
             ResortAvatar.sort((a, b) => {
-            return parseInt(a.Order) - parseInt(b.Order);
-        });
+                return parseInt(a.Order) - parseInt(b.Order);
+            });
 
             const FitP_translater = (string) => {
                 if (string == 'Tight') return '緊身';
@@ -1610,26 +1607,41 @@ letter-spacing: 0.64px;
             const start = 'A';
             const startCharCode = start.charCodeAt(0) - 1;
 
+            // 先隱藏所有行
+            for (let i = 1; i < trl; i++) {
+                trs[i].style.display = 'none';
+            }
+
+            // 根據當前選中的身高範圍顯示對應的行
+            const activeHeightBtn = this.shadowRoot.querySelector('.filter-btn-container .active');
+            if (activeHeightBtn) {
+                const heightClass = activeHeightBtn.getAttribute('data-height');
+                const heightRows = table.getElementsByClassName(heightClass);
+                Array.from(heightRows).forEach(row => {
+                    row.style.display = '';
+                });
+            }
+
             for (let i = 0; i < trl; i++) {
-            if (i == 0) {
+                if (i == 0) {
                     for (let j = 0; j < trs[i].children.length; j++) {
                         const info_header = keys[j];
-                }
-            } else {
-                    for (let j = 0; j < trs[i].children.length; j++) {
-                    if (keys[j] == 'Chest') {
-                            trs[i].children[j].innerText = 'test';
-                    } else if (keys[j] == 'Name' && Object.keys(ResortAvatar[i - 1]).includes('Image_src')) {
-                        trs[i].children[j].innerHTML = '<div style="height: 60px;width: 60px;display: flex;align-items: center;margin: auto;"><img width=100% height=100% style="border-radius:60px" src="' + ResortAvatar[i - 1]['Image_src'] + '"></div>';
-                    } else if (keys[j] == 'Name') {
-                        trs[i].children[j].innerText = String.fromCharCode(startCharCode + i);
-                    } else {
-                        if (typeof ResortAvatar[i - 1][keys[j]] == 'undefined') {
-                            trs[i].children[j].innerText = '-';
-                        } else {
-                            trs[i].children[j].innerText = FitP_translater(ResortAvatar[i - 1][keys[j]]);
-                        }
                     }
+                } else {
+                    for (let j = 0; j < trs[i].children.length; j++) {
+                        if (keys[j] == 'Chest') {
+                            trs[i].children[j].innerText = ResortAvatar[i - 1]['Chest'] || '-';
+                        } else if (keys[j] == 'Name' && Object.keys(ResortAvatar[i - 1]).includes('Image_src')) {
+                            trs[i].children[j].innerHTML = '<div style="height: 60px;width: 60px;display: flex;align-items: center;margin: auto;"><img width=100% height=100% style="border-radius:60px" src="' + ResortAvatar[i - 1]['Image_src'] + '"></div>';
+                        } else if (keys[j] == 'Name') {
+                            trs[i].children[j].innerText = String.fromCharCode(startCharCode + i);
+                        } else {
+                            if (typeof ResortAvatar[i - 1][keys[j]] == 'undefined') {
+                                trs[i].children[j].innerText = '-';
+                            } else {
+                                trs[i].children[j].innerText = FitP_translater(ResortAvatar[i - 1][keys[j]]);
+                            }
+                        }
                     }
                 }
             }
