@@ -198,9 +198,9 @@ class InfoDisplayComponent extends HTMLElement {
 
         // 渲染額外文字說明
         if (data.hasTextarea && data.sizeInfoTextarea) {
-            const demoElement = this.shadowRoot.querySelector('.demo');
-            if (demoElement) {
-                demoElement.insertAdjacentHTML('afterend', '<div style="text-align: left;color:#333;font-size:12px;width: 100%;margin: auto;border: 1px solid #e1e1e1;margin-top: 1rem;padding: 8px;">' + data.sizeInfoTextarea.replaceAll('\n', '<br>') + '</div>');
+            const sizeInfoCol = this.shadowRoot.querySelector('.sizeinfo-col');
+            if (sizeInfoCol) {
+                sizeInfoCol.insertAdjacentHTML('beforeend', '<div style="text-align: left;color:#333;font-size:12px;width: 100%;margin: auto;border: 1px solid #e1e1e1;margin-top: 1rem;padding: 8px;">' + data.sizeInfoTextarea.replaceAll('\n', '<br>') + '</div>');
             }
         }
 
