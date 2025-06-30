@@ -688,5 +688,5 @@ window.InfoDisplayDemo = {
     ONLINE_RESOURCES
 };
 
-// 自動初始化 - 使用空閒時間載入
-init({ loadMethod: 'idle' });
+// 移除自動初始化，防止重複渲染
+// init({ loadMethod: 'idle' });
