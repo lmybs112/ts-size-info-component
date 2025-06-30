@@ -1103,7 +1103,7 @@ letter-spacing: 0.64px;
 }
 
 /* 確保標題行的佈局 - 預設 padding-top 為 0 */
-#inffits-info-display-reference-component #size-table-header h5 {
+#inffits-info-display-reference-component .inf-container h5 {
     padding-bottom: 20px;
     border-bottom: 1px solid #dee2e6;
     padding-top: 0;
@@ -1117,6 +1117,7 @@ letter-spacing: 0.64px;
 
 #inffits-info-display-reference-component #Clothes_Attributes h5 {
   padding-bottom: 20px;
+border-color: transparent;
   padding-top: 0;
 }
 
@@ -1141,6 +1142,9 @@ letter-spacing: 0.64px;
     padding-bottom: 20px;
     overflow: hidden;
 }
+#inffits-info-display-reference-component[data-collapsible="true"] .attributes-content {
+    border-color: transparent;
+    }
 
 /* 簡化的折疊狀態 - 只在有折疊功能時應用 */
 #inffits-info-display-reference-component[data-collapsible="true"] .size-table-content.collapse,
