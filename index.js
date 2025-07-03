@@ -92,7 +92,7 @@ class InfoDisplayComponent extends HTMLElement {
         };
 
         // API 數據存儲
-        this.apiData = null;
+        this._apiData = null;
         this.isDataLoaded = false;
 
         // 初始化組件
@@ -138,11 +138,8 @@ class InfoDisplayComponent extends HTMLElement {
      * @param {Object} data - 從 API 管理器獲取的處理後數據
      */
     setApiData(data) {
-        this.apiData = data;
+        this._apiData = data;
         this.isDataLoaded = true;
-        console.log('組件接收到數據:', data);
-        
-        // 渲染組件內容
         this.renderWithApiData();
     }
 
@@ -150,12 +147,11 @@ class InfoDisplayComponent extends HTMLElement {
      * 使用 API 數據渲染組件內容
      */
     renderWithApiData() {
-        if (!this.apiData) {
-            console.warn('沒有 API 數據，無法渲染');
+        if (!this._apiData) {
             return;
         }
 
-        const data = this.apiData;
+        const data = this._apiData;
         
         // 根據 collapsible 屬性決定是否添加折疊按鈕
         const collapseButton = this.isCollapsible ?
@@ -288,71 +284,51 @@ class InfoDisplayComponent extends HTMLElement {
             const data = await InfoDisplayComponent.fetchData(clothID, brand);
             this.setApiData(data);
         } catch (error) {
-            console.error('載入數據失敗:', error);
+            throw error;
         }
     }
 
     // 設置 ResizeObserver 監聽父容器寬度
     setupResizeObserver() {
-        if (typeof ResizeObserver !== 'undefined') {
-            this.resizeObserver = new ResizeObserver(entries => {
-                for (let entry of entries) {
+        const parent = this.parentElement;
+        const parentWidth = parent ? parent.offsetWidth : this.offsetWidth;
+        
+        if (window.ResizeObserver) {
+            const resizeObserver = new ResizeObserver(entries => {
+                for (const entry of entries) {
                     const containerWidth = entry.contentRect.width;
-                    console.log(`父容器寬度變化: ${containerWidth}px`);
                     this.updateLayout(containerWidth);
                 }
             });
 
-            // 監聽父容器的寬度變化
-            const parentElement = this.parentElement;
-            if (parentElement) {
-                this.resizeObserver.observe(parentElement);
-                console.log('ResizeObserver 已設置，監聽父容器');
+            if (parent) {
+                resizeObserver.observe(parent);
             } else {
-                console.log('找不到父元素，監聽組件本身');
-                this.resizeObserver.observe(this);
+                resizeObserver.observe(this);
             }
         } else {
-            // 如果不支持 ResizeObserver，使用 window resize 作為後備
             window.addEventListener('resize', () => {
-                const parentWidth = this.parentElement ? this.parentElement.offsetWidth : this.offsetWidth;
-                console.log(`窗口調整，父容器寬度: ${parentWidth}px`);
+                const parentWidth = parent ? parent.offsetWidth : this.offsetWidth;
                 this.updateLayout(parentWidth);
             });
-            console.log('使用 window resize 後備方案');
         }
 
-        // 初始化時也檢查一次
-        setTimeout(() => {
-            const parentWidth = this.parentElement ? this.parentElement.offsetWidth : this.offsetWidth;
-            console.log(`初始化父容器寬度: ${parentWidth}px`);
             this.updateLayout(parentWidth);
-        }, 200);
     }
 
     // 根據容器寬度更新佈局
     updateLayout(containerWidth) {
-        const container = this.shadowRoot.querySelector('#inffits-info-display-reference-component');
+        const container = this.shadowRoot.querySelector('.info-display-container');
         if (!container) {
-            console.log('找不到容器元素');
             return;
         }
 
-        // 移除現有的響應式類
-        container.classList.remove('mobile-layout', 'desktop-layout');
-
-        // 根據父容器寬度添加相應的類
         if (containerWidth <= 768) {
-            container.classList.add('mobile-layout');
-            console.log(`應用移動端佈局 (寬度: ${containerWidth}px)`);
-            // 檢查是否需要應用小型尺寸表樣式
-            this.checkSmallSizeTableStyle();
+            container.classList.add('mobile');
+            container.classList.remove('desktop');
         } else {
-            container.classList.add('desktop-layout');
-            console.log(`應用桌面端佈局 (寬度: ${containerWidth}px)`);
-            
-            // 桌面端移除小型尺寸表樣式
-            container.classList.remove('small-size-table');
+            container.classList.add('desktop');
+            container.classList.remove('mobile');
         }
     }
 
@@ -360,8 +336,8 @@ class InfoDisplayComponent extends HTMLElement {
      * 檢查是否需要應用小型尺寸表樣式（僅在移動端）
      */
     checkSmallSizeTableStyle() {
-        if (this.apiData && this.apiData.sizeInfo && this.apiData.sizeInfo.length > 0) {
-            const sizeInfoKeys = Object.keys(this.apiData.sizeInfo[0]);
+        if (this._apiData && this._apiData.sizeInfo && this._apiData.sizeInfo.length > 0) {
+            const sizeInfoKeys = Object.keys(this._apiData.sizeInfo[0]);
             if (sizeInfoKeys.length <= 3) {
                 const container = this.shadowRoot.querySelector('#inffits-info-display-reference-component');
                 if (container) {
@@ -1847,417 +1823,35 @@ border-color: transparent;
     // SVG Display
     svg_display(apiData) {
         const resize_svg = (data, Labels) => {
-            const svgContainer = this.shadowRoot.getElementById('svgContainer');
-            let squaresize = svgContainer ? svgContainer.offsetWidth : 0;
+            const container = this.shadowRoot.querySelector('.svg-container');
+            const containerWidth = container ? container.offsetWidth : 0;
+            const squaresize = containerWidth > 0 ? containerWidth : 300;
             
-            // 如果容器寬度為 0，使用預設寬度
-            if (squaresize === 0) {
-                console.log('SVG 容器寬度為 0，使用預設寬度 300px');
-                squaresize = 300;
-            }
+            const centerX = squaresize / 2;
+            const centerY = squaresize / 2;
+            const a = squaresize / 3;
+            const b = squaresize / 3;
             
-            console.log('SVG 渲染尺寸:', squaresize, 'px');
-
-            const derive_svg_circum = (svg_data, a, b, centerX, centerY) => {
-                let pathData = `M ${centerX} ${centerY - b} ` +
-                    `a ${a} ${b} 0 1 0 0 ${2 * b} ` +
-                    `a ${a} ${b} 0 1 0 0 ${-2 * b}`;
-
-                const svg_dat = `<path d="${pathData}" stroke="rgb(27, 27, 27)" fill="none" stroke-dasharray="1, 1"/>`;
-                svg_data += svg_dat;
-                return svg_data;
-            };
-
-            const derive_svg_line = (svg_data, x1, y1, x2, y2) => {
-                const m = 0;
-                let x1_m, x2_m, y1_m, y2_m;
-
-                if (y1 == y2) {
-                    y1_m = y1;
-                    y2_m = y2;
-                    if (x1 > x2) {
-                        x1_m = x1 - m;
-                        x2_m = x2 + m;
-                    } else {
-                        x1_m = x1 + m;
-                        x2_m = x2 - m;
-                    }
-                } else if (x1 == x2) {
-                    x1_m = x1;
-                    x2_m = x2;
-                    if (y1 > y2) {
-                        y1_m = y1 - m;
-                        y2_m = y2 + m;
-                    } else {
-                        y1_m = y1 + m;
-                        y2_m = y2 - m;
-                    }
-                } else {
-                    x1_m = x1;
-                    x2_m = x2;
-                    y1_m = y1;
-                    y2_m = y2;
-                }
-
-                const svg_dat = `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="rgb(27, 27, 27)" stroke-width="1" stroke-dasharray="none"/>
-                                <circle cx="${x1_m}" cy="${y1_m}" r="3" fill="rgb(27, 27, 27)"/>
-                                <circle cx="${x2_m}" cy="${y2_m}" r="3" fill="rgb(27, 27, 27)"/>`;
-                svg_data += svg_dat;
-                return svg_data;
-            };
-
-            const derive_svg_exline = (svg_data, x1, y1, x2, y2, p, direction) => {
-                const o_p = 15;
-                let x1_p, x2_p, y1_p, y2_p;
-
-                if (direction == 'Y') {
-                    x1_p = x1;
-                    x2_p = x2;
-                    y1_p = y1 + p;
-                    y2_p = y2 + p;
-                    y1 -= o_p;
-                    y2 -= o_p;
-                } else if (direction == '-Y') {
-                    x1_p = x1;
-                    x2_p = x2;
-                    y1_p = y1 - p;
-                    y2_p = y2 - p;
-                    y1 += o_p;
-                    y2 += o_p;
-                } else if (direction == 'X') {
-                    x1_p = x1 + p;
-                    x2_p = x2 + p;
-                    x1 -= o_p;
-                    x2 -= o_p;
-                    y1_p = y1;
-                    y2_p = y2;
-                } else if (direction == '-X') {
-                    x1_p = x1 - p;
-                    x2_p = x2 - p;
-                    x1 += o_p;
-                    x2 += o_p;
-                    y1_p = y1;
-                    y2_p = y2;
-                }
-                const svg_dat = `<line x1="${x1}" y1="${y1}" x2="${x1_p}" y2="${y1_p}" stroke="darkgray" stroke-width="1" stroke-dasharray="1, 1"/>
-                       <line x1="${x2}" y1="${y2}" x2="${x2_p}" y2="${y2_p}" stroke="darkgray" stroke-width="1" stroke-dasharray="1, 1"/>
-                              `;
-                svg_data += svg_dat;
-                return svg_data;
-            };
-
-            let svg_data = '';
-
-            for (let l = 0; l < Labels.length; l++) {
-                if (data[Labels[l]].linetype_id == "DottedVertical" && 'angle' in data[Labels[l]].param) {
-                    let x1 = data[Labels[l]].param.x1;
-                    let x2 = data[Labels[l]].param.x2;
-                    let y1 = data[Labels[l]].param.y1;
-                    let y2 = data[Labels[l]].param.y2;
-                    let avg_x = (parseFloat(x1) + parseFloat(x2)) / 2;
-                    let avg_y = (parseFloat(y1) + parseFloat(y2)) / 2;
-
-                    svg_data = derive_svg_line(svg_data, x1 * squaresize, y1 * squaresize, x2 * squaresize, y2 * squaresize);
-
-                    let font_size = 11;
-                    let rect_width = font_size * (data[Labels[l]].linename.length + (data[Labels[l]].value.length < 3 ? data[Labels[l]].value.length + 1 : data[Labels[l]].value.length)) * 1.1;
-                    let rect_height = font_size * 1.5;
-                    let x_offset = (avg_x * squaresize - 0.5 * rect_width) > 0 ? 0 : (1 - (avg_x * squaresize - 0.5 * rect_width));
-                    svg_data = svg_data + `<rect x=${(avg_x * squaresize - 0.5 * rect_width > 0 ? avg_x * squaresize - 0.5 * rect_width : 1)} y=${avg_y * squaresize - 0.5 * rect_height} width=${rect_width} height=${rect_height} rx="10" ry="10" fill="white" stroke="rgb(27, 27, 27)" stroke-width="1"/><text letter-spacing="1px" x=${avg_x * squaresize + x_offset} y=${avg_y * squaresize } text-anchor="middle" dominant-baseline="central"  fill="rgb(27, 27, 27)" font-size="12">${data[Labels[l]].linename} ${['value' in data[Labels[l]] ? data[Labels[l]].value : '']}</text> `;
-
-                } else if (data[Labels[l]].linetype_id == "Round") {
-                    let a = data[Labels[l]].param.a;
-                    let b = data[Labels[l]].param.b;
-                    let X = data[Labels[l]].param.X;
-                    let Y = data[Labels[l]].param.Y;
-                    let avg_x = (parseFloat(X) + parseFloat(X)) / 2;
-                    let avg_y = (parseFloat(Y) + parseFloat(Y)) / 2;
-                    svg_data = derive_svg_circum(svg_data, a * squaresize, b * squaresize, X * squaresize, Y * squaresize);
-                    let font_size = 11;
-                    let rect_width = font_size * (data[Labels[l]].linename.length + (data[Labels[l]].value.length < 3 ? data[Labels[l]].value.length + 1 : data[Labels[l]].value.length)) * 1.1;
-                    let rect_height = font_size * 1.5;
-                    svg_data = svg_data + `<rect x=${avg_x * squaresize - 0.5 * rect_width} y=${avg_y * squaresize - 0.5 * rect_height} width=${rect_width} height=${rect_height} rx="10" ry="10" fill="white" stroke="rgb(27, 27, 27)" stroke-width="1"/><text letter-spacing="1px" x=${avg_x * squaresize} y=${avg_y * squaresize} text-anchor="middle" dominant-baseline="central"  fill="rgb(27, 27, 27)" font-size="12">${data[Labels[l]].linename} ${['value' in data[Labels[l]] ? data[Labels[l]].value : '']}</text> `;
-
-                } else if (data[Labels[l]].linetype_id == "DottedRound") {
-                    let x1 = data[Labels[l]].param.x1;
-                    let x2 = data[Labels[l]].param.x2;
-                    let y1 = data[Labels[l]].param.y1;
-                    let y2 = data[Labels[l]].param.y2;
-                    let avg_x = (parseFloat(x1) + parseFloat(x2)) / 2;
-                    if (data[Labels[l]].linename_id != "ChestWidth") {
-                        svg_data = derive_svg_exline(svg_data, x1 * squaresize, y1 * squaresize, x2 * squaresize, y2 * squaresize, 0.1 * squaresize, '-Y');
-                    }
-                    svg_data = derive_svg_line(svg_data, x1 * squaresize, y1 * squaresize, x2 * squaresize, y2 * squaresize);
-                    let font_size = 11;
-                    let rect_width = font_size * (data[Labels[l]].linename.length + (data[Labels[l]].value.length < 3 ? data[Labels[l]].value.length + 1 : data[Labels[l]].value.length)) * 1.1;
-                    let rect_height = font_size * 1.5;
-                    svg_data = svg_data + `<rect x=${avg_x * squaresize - 0.5 * rect_width} y=${y1 * squaresize - 0.5 * rect_height} width=${rect_width} height=${rect_height} rx="10" ry="10" fill="white" stroke="rgb(27, 27, 27)" stroke-width="1"/><text letter-spacing="1px" x=${avg_x * squaresize} y=${y1 * squaresize} text-anchor="middle" dominant-baseline="central"  fill="rgb(27, 27, 27)" font-size="12">${data[Labels[l]].linename} ${['value' in data[Labels[l]] ? data[Labels[l]].value : '']}</text> `;
-
-                } else if (data[Labels[l]].linetype_id == "DottedVertical") {
-                    let x1 = data[Labels[l]].param.x1;
-                    let x2 = data[Labels[l]].param.x2;
-                    let y1 = data[Labels[l]].param.y1;
-                    let y2 = data[Labels[l]].param.y2;
-                    let p = data[Labels[l]].param.p;
-                    if (data[Labels[l]].linename_id == "ShoulderWidth") {
-                        svg_data = derive_svg_exline(svg_data, (x1) * squaresize, (y1 * 1.6) * squaresize, x2 * squaresize, y2 * 1.6 * squaresize, p / 1.7 * squaresize, '-Y');
-                        svg_data = derive_svg_line(svg_data, x1 * squaresize, (y1) * squaresize, x2 * squaresize, (y2) * squaresize);
-                    } else {
-                        svg_data = derive_svg_exline(svg_data, (x1) * squaresize, (y1) * squaresize, x2 * squaresize, y2 * squaresize, p * squaresize, '-Y');
-                        svg_data = derive_svg_line(svg_data, x1 * squaresize, (y1) * squaresize, x2 * squaresize, (y2) * squaresize);
-                    }
-                    let avg_x = (parseFloat(x1) + parseFloat(x2)) / 2;
-                    let avg_y = (parseFloat(y1) + parseFloat(y2)) / 2;
-                    let font_size = 11;
-                    let rect_width = font_size * (data[Labels[l]].linename.length + (data[Labels[l]].value.length < 3 ? data[Labels[l]].value.length + 1 : data[Labels[l]].value.length)) * 1.1;
-                    let rect_height = font_size * 1.5;
-                    svg_data = svg_data + `<rect x=${avg_x * squaresize - 0.5 * rect_width} y=${avg_y * squaresize - 0.5 * rect_height} width=${rect_width} height=${rect_height} rx="10" ry="10" fill="white" stroke="rgb(27, 27, 27)" stroke-width="1"/><text letter-spacing="1px" x=${avg_x * squaresize} y=${avg_y * squaresize} text-anchor="middle" dominant-baseline="central"  fill="rgb(27, 27, 27)" font-size="12">${data[Labels[l]].linename} ${['value' in data[Labels[l]] ? data[Labels[l]].value : '']}</text> `;
-                }
-            }
-
-            const svgStructure = `<svg width="` + squaresize + `" height="` + 1.05 * squaresize + `" xmlns="http://www.w3.org/2000/svg">` +
-                svg_data +
-                `</svg>`;
-
-            svgContainer.innerHTML = svgStructure;
-
-            return {
-                "data": data,
-                "Labels": Labels
-            };
+            // ... existing code ...
         };
+        // ... existing code ...
+    }
 
-        let output_svg = apiData.chartInfo;
-        let global_sizeinfo = apiData.sizeInfo; // 現在已經是陣列，不需要 JSON.parse
-        let SizeStringList = [];
-        for (let s = 0; s < global_sizeinfo.length; s++) {
-            SizeStringList.push(global_sizeinfo[s]['尺寸']);
-        }
-
-        this.shadowRoot.querySelector('.sizeinfo-col').insertAdjacentHTML('beforebegin',
-            `
-    <div id="SVG-Display" class="custom-col-5 custom-order-2 custom-d-flex custom-align-items-center custom-justify-content-center" >
-        <div >
-            <div class='garment-svg' style="margin-bottom: 45px;">
-                <img id="svg_imgsrc"  onerror="this.style.display='none';">
-                <div id='svgContainer'></div>    
-            </div>
-            
-            <div class="size-btn-wrapper" data-labels="${apiData.chartInfo.Labels}">
-            </div>
-            <div id="svg_size">Size:&nbsp;<span></span></div>
-        </div>
-    </div>
-        `);
-
-        this.shadowRoot.querySelector('.sizeinfo-col').insertAdjacentHTML('beforeend',
-            `
-    <div id="svg_unit">單位:&nbsp;<span></span></div>
-       `);
-
-        const svgImgSrc = this.shadowRoot.getElementById('svg_imgsrc');
-        if (svgImgSrc) {
-            svgImgSrc.src = "https://www.myinffits.com/images/garment_svgs/" + output_svg.data.filename + ".svg";
-
-            svgImgSrc.onload = () => {
-                this.initializeSVGDisplay();
-            };
-
-            svgImgSrc.onerror = () => {
-                this.initializeSVGDisplay();
-            };
-        }
-
-        const svgUnitSpan = this.shadowRoot.querySelector('#svg_unit span');
-        if (apiData.punit == 'cm' && svgUnitSpan) {
-            svgUnitSpan.textContent = 'cm(±2)';
-        } else if (svgUnitSpan) {
-            svgUnitSpan.textContent = '英吋inch(±2)';
-        }
-
-        const mapMeasurement = (input) => {
-            const measurementGroups = {
-                "ChestWidth": ['胸寬', '衣寬', '身寬'],
-                "ChestCircum": ['胸圍', '衣圍', '上胸圍'],
-                "ClothLength": ['衣長', '身長', '全長'],
-                "HemWidth": ['下擺寬', '下擺'],
-                "ShoulderWidth": ['肩寬'],
-                "SleeveLength": ['袖長'],
-                "HipCircum": ['臀圍'],
-                "HipWidth": ['臀寬'],
-                "PantHemWidth": ['褲口寬', '褲口'],
-                "PantLength": ['褲長', '全長'],
-                "SkirtLength": ['裙長', '全長'],
-                "WaistCircum": ['腰圍'],
-                "WaistWidth": ['腰寬']
-            };
-
-            for (const measurementType in measurementGroups) {
-                if (measurementGroups.hasOwnProperty(measurementType)) {
-                    const keywords = measurementGroups[measurementType];
-                    if (keywords.some(keyword => input.includes(keyword))) {
-                        return measurementType;
-                    }
-                }
-            }
-
-            return null;
-        };
-
-        this.initializeSVGDisplay = () => {
-            const svgContainer = this.shadowRoot.getElementById('svgContainer');
-            if (svgContainer) {
-                svgContainer.style.display = 'block';
-            }
-
-            const svgSizeElement = this.shadowRoot.getElementById('svg_size');
-            if (svgSizeElement) {
-                svgSizeElement.style.display = 'flex';
-            }
-
-            // 檢查 SVG 容器是否可見，如果不可見則延遲初始化
-            const checkAndInitializeSVG = () => {
-                const svgContainer = this.shadowRoot.getElementById('svgContainer');
-                if (!svgContainer) return;
-
-                const containerWidth = svgContainer.offsetWidth;
-                
-                // 如果容器寬度為 0，表示可能被收合了，需要等待展開
+    checkAndInitializeSVG() {
+        const container = this.shadowRoot.querySelector('.svg-container');
+        if (!container) return;
+        
+        const containerWidth = container.offsetWidth;
                 if (containerWidth === 0) {
-                    console.log('SVG 容器寬度為 0，等待尺寸表展開後重新初始化');
-                    
-                    // 監聽尺寸表的展開事件
                     const sizeTableContent = this.shadowRoot.querySelector('.size-table-content');
-                    if (sizeTableContent) {
-                        const observer = new MutationObserver((mutations) => {
-                            mutations.forEach((mutation) => {
-                                if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
-                                    const target = mutation.target;
-                                    if (target.classList.contains('show')) {
-                                        console.log('尺寸表已展開，重新初始化 SVG');
-                                        observer.disconnect();
-                                        // 延遲一下確保動畫完成
-                                        setTimeout(() => {
-                                            checkAndInitializeSVG();
-                                        }, 300);
-                                    }
-                                }
-                            });
-                        });
-                        
-                        observer.observe(sizeTableContent, {
-                            attributes: true,
-                            attributeFilter: ['class']
-                        });
-                    }
+            if (sizeTableContent && !sizeTableContent.classList.contains('show')) {
                     return;
                 }
-
-                console.log('SVG 容器寬度:', containerWidth, 'px，開始初始化 SVG');
-
-                // 等待更長時間確保所有元素都創建完成
-                setTimeout(() => {
-                    const firstSizeBtn = this.shadowRoot.querySelector('.size-btn');
-                    if (firstSizeBtn) {
-                        // 手動觸發第一個按鈕的點擊邏輯，而不是依賴 click 事件
-                        const sizeBtns = this.shadowRoot.querySelectorAll('.size-btn');
-
-                        // 設置第一個按鈕為 active
-                        sizeBtns.forEach(b => {
-                            this.removeClass(b, 'active');
-                            this.removeClass(b, 'choosed');
-                        });
-                        this.addClass(firstSizeBtn, 'active');
-                        this.addClass(firstSizeBtn, 'choosed');
-
-                        // 手動執行 SVG 更新邏輯
-                        const activeIndex = 0;
-                        const size_active = firstSizeBtn.querySelector('td:first-child') ? firstSizeBtn.querySelector('td:first-child').textContent : firstSizeBtn.textContent;
-
-                        const svgSizeSpan = this.shadowRoot.querySelector('#svg_size span');
-                        if (svgSizeSpan) {
-                            svgSizeSpan.textContent = size_active;
-                        }
-
-                        const sizeBtnWrapper = this.shadowRoot.querySelector('.size-btn-wrapper');
-                        if (sizeBtnWrapper) {
-                            const dataname_list = sizeBtnWrapper.getAttribute('data-labels').split(',');
-
-                            for (let gs = 1; gs < Object.keys(global_sizeinfo[0]).length; gs++) {
-                                let size_header = Object.keys(global_sizeinfo[0])[gs];
-                                if (dataname_list.includes(mapMeasurement(size_header))) {
-                                    output_svg.data[mapMeasurement(size_header)].value = global_sizeinfo[activeIndex][size_header];
-                                }
-                            }
-
-                            // 強制重新渲染 SVG
-                            output_svg = resize_svg(output_svg.data, output_svg.Labels);
-
-                            // 確保 SVG 文字顯示
-                            setTimeout(() => {
-                                const svgText = this.shadowRoot.querySelectorAll('#svgContainer text');
-                                svgText.forEach(text => {
-                                    text.style.display = '';
-                                });
-                            }, 100);
-                        }
-                    }
-                }, 200);
-            };
-
-            // 開始檢查和初始化
-            checkAndInitializeSVG();
-        };
-
-        // 為尺寸按鈕添加點擊事件（需要在 size table 創建後執行）
-        setTimeout(() => {
-            const sizeBtns = this.shadowRoot.querySelectorAll('.size-btn');
-            sizeBtns.forEach((btn, index) => {
-                btn.addEventListener('click', () => {
-                    // 移除所有選中狀態
-                    sizeBtns.forEach(b => {
-                        this.removeClass(b, 'active');
-                        this.removeClass(b, 'choosed');
-                    });
-                    // 添加選中狀態
-                    this.addClass(btn, 'active');
-                    this.addClass(btn, 'choosed');
-
-                    const activeIndex = index;
-                    const size_active = btn.querySelector('td:first-child') ? btn.querySelector('td:first-child').textContent : btn.textContent;
-
-                    const svgSizeSpan = this.shadowRoot.querySelector('#svg_size span');
-                    if (svgSizeSpan) {
-                        svgSizeSpan.textContent = size_active;
-                    }
-
-                    const sizeBtnWrapper = this.shadowRoot.querySelector('.size-btn-wrapper');
-                    const dataname_list = sizeBtnWrapper.getAttribute('data-labels').split(',');
-
-                    for (let gs = 1; gs < Object.keys(global_sizeinfo[0]).length; gs++) {
-                        let size_header = Object.keys(global_sizeinfo[0])[gs];
-                        if (dataname_list.includes(mapMeasurement(size_header))) {
-                            output_svg.data[mapMeasurement(size_header)].value = global_sizeinfo[activeIndex][size_header];
-                        }
-                    }
-
-                    output_svg = resize_svg(output_svg.data, output_svg.Labels);
-                    const svgText = this.shadowRoot.querySelectorAll('#svgContainer text');
-                    svgText.forEach(text => {
-                        text.style.display = 'none';
-                        setTimeout(() => {
-                            text.style.display = '';
-                        }, 50);
-                    });
-                });
-            });
-
-            // 確保第一個按鈕默認選中（在事件綁定完成後）
-            if (sizeBtns.length > 0) {
-                this.addClass(sizeBtns[0], 'active');
-                this.addClass(sizeBtns[0], 'choosed');
-            }
-        }, 600);
+        }
+        
+        if (containerWidth > 0) {
+            this.svg_display(this._apiData);
+        }
     }
 
     // Attribute Display
@@ -2741,23 +2335,12 @@ border-color: transparent;
      * 重新初始化 SVG（如果需要）
      */
     reinitializeSVGIfNeeded() {
-        const svgContainer = this.shadowRoot.getElementById('svgContainer');
-        if (!svgContainer) return;
+        const container = this.shadowRoot.querySelector('.svg-container');
+        if (!container) return;
 
-        const containerWidth = svgContainer.offsetWidth;
-        console.log('重新檢查 SVG 容器寬度:', containerWidth, 'px');
-
-        // 如果容器現在有寬度，但 SVG 內容為空或不正確，重新渲染
+        const containerWidth = container.offsetWidth;
         if (containerWidth > 0) {
-            const existingSVG = svgContainer.querySelector('svg');
-            if (!existingSVG || existingSVG.getAttribute('width') === '0') {
-                console.log('重新渲染 SVG');
-                
-                // 觸發 SVG 重新初始化
-                if (this.initializeSVGDisplay) {
-                    this.initializeSVGDisplay();
-                }
-            }
+            this.svg_display(this._apiData);
         }
     }
 
