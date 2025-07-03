@@ -157,10 +157,10 @@ const DEFAULT_CONFIG = {
             }
         },
         {
-            id: `.pdcnt_tab_cnt:nth-child(2)`,
+            id: '#punit_wrapper',
             collapsible: false,
             insertOptions: {
-                position: 'insertAfter',
+                position: 'insertBefore',
                 clearContainer: false
             }
         }
@@ -210,15 +210,22 @@ function loadScript(url, options = {}) {
  */
 async function loadOnlineResources() {
     try {
+        // console.log('開始載入線上資源...');
+        
         // 按順序載入：先載入 API 管理器，再載入組件
         await loadScript(ONLINE_RESOURCES.apiManager);
+        // console.log('✓ API Manager 載入完成');
+        
         await loadScript(ONLINE_RESOURCES.component);
+        // console.log('✓ Info Display Component 載入完成');
         
         // 等待組件註冊完成
         await customElements.whenDefined('info-display-component');
+        // console.log('✓ 組件註冊完成');
         
         return true;
     } catch (error) {
+        // console.error('載入線上資源失敗:', error);
         throw error;
     }
 }
@@ -230,18 +237,25 @@ async function loadOnlineResources() {
  */
 async function loadOnlineResourcesDeferred(delay = 100) {
     try {
+        // console.log('開始延遲載入線上資源...');
+        
         // 延遲一段時間，讓其他腳本先執行
         await new Promise(resolve => setTimeout(resolve, delay));
         
         // 按順序載入：先載入 API 管理器，再載入組件
         await loadScript(ONLINE_RESOURCES.apiManager, { defer: true });
+        // console.log('✓ API Manager 載入完成 (deferred)');
+        
         await loadScript(ONLINE_RESOURCES.component, { defer: true });
+        // console.log('✓ Info Display Component 載入完成 (deferred)');
         
         // 等待組件註冊完成
         await customElements.whenDefined('info-display-component');
+        // console.log('✓ 組件註冊完成 (deferred)');
         
         return true;
     } catch (error) {
+        // console.error('延遲載入線上資源失敗:', error);
         throw error;
     }
 }
@@ -254,6 +268,7 @@ async function loadOnlineResourcesIdle() {
     return new Promise((resolve, reject) => {
         const loadFunction = async () => {
             try {
+                // console.log('開始空閒時間載入線上資源...');
                 await loadOnlineResourcesDeferred(0);
                 resolve();
             } catch (error) {
@@ -284,12 +299,15 @@ function setComponentInitialStates(component, defaultStates = {}) {
         ...defaultStates        // 覆蓋用戶設定的值
     };
     
+    // console.log('設定組件初始狀態:', states);
+    
     // 將狀態配置傳遞給組件，組件會在初始化時直接使用
     component._initialStates = states;
     
     // 簡單的驗證函數，在組件渲染後檢查狀態是否正確
     setTimeout(() => {
         if (component.shadowRoot) {
+            // console.log('驗證組件初始狀態...');
             applyInitialStates(component, states);
         }
     }, 500); // 延遲檢查，確保組件完全渲染
@@ -302,6 +320,7 @@ function setComponentInitialStates(component, defaultStates = {}) {
  */
 function applyInitialStates(component, states) {
     if (!component.shadowRoot) {
+        // console.warn('組件 shadowRoot 尚未準備完成');
         return;
     }
     
@@ -314,6 +333,11 @@ function applyInitialStates(component, states) {
         const sizeTableToggle = component.shadowRoot.getElementById('size-table-toggle');
         if (sizeTableContent && sizeTableToggle) {
             const isExpanded = sizeTableContent.classList.contains('show');
+            if (isExpanded === states.sizeTable) {
+                // console.log(`✓ 尺寸表狀態正確: ${states.sizeTable ? '展開' : '收合'}`);
+            } else {
+                // console.warn(`⚠ 尺寸表狀態不匹配，期望: ${states.sizeTable ? '展開' : '收合'}, 實際: ${isExpanded ? '展開' : '收合'}`);
+            }
         }
         
         // 檢查試穿資訊狀態
@@ -321,6 +345,11 @@ function applyInitialStates(component, states) {
         const tryonReportToggle = component.shadowRoot.getElementById('tryon-report-toggle');
         if (tryonReportContent && tryonReportToggle) {
             const isExpanded = tryonReportContent.classList.contains('show');
+            if (isExpanded === states.tryonReport) {
+                // console.log(`✓ 試穿資訊狀態正確: ${states.tryonReport ? '展開' : '收合'}`);
+            } else {
+                // console.warn(`⚠ 試穿資訊狀態不匹配，期望: ${states.tryonReport ? '展開' : '收合'}, 實際: ${isExpanded ? '展開' : '收合'}`);
+            }
         }
         
         // 檢查商品屬性狀態
@@ -328,10 +357,15 @@ function applyInitialStates(component, states) {
         const attributesToggle = component.shadowRoot.getElementById('attributes-toggle');
         if (attributesContent && attributesToggle) {
             const isExpanded = attributesContent.classList.contains('show');
+            if (isExpanded === states.attributes) {
+                // console.log(`✓ 商品屬性狀態正確: ${states.attributes ? '展開' : '收合'}`);
+            } else {
+                // console.warn(`⚠ 商品屬性狀態不匹配，期望: ${states.attributes ? '展開' : '收合'}, 實際: ${isExpanded ? '展開' : '收合'}`);
+            }
         }
         
     } catch (error) {
-        // Handle error silently
+        // console.error('驗證初始狀態時發生錯誤:', error);
     }
 }
 
@@ -373,6 +407,7 @@ function createComponent(data, config = {}) {
 function appendToContainer(component, containerSelector, insertOptions = {}) {
     const container = document.querySelector(containerSelector);
     if (!container) {
+        // console.warn(`容器 ${containerSelector} 不存在`);
         return false;
     }
     
@@ -391,6 +426,7 @@ function appendToContainer(component, containerSelector, insertOptions = {}) {
         switch (position) {
             case 'prepend':
                 container.insertBefore(component, container.firstChild);
+                // console.log(`組件已 prepend 到 ${containerSelector}`);
                 break;
                 
             case 'insertBefore':
@@ -401,9 +437,11 @@ function appendToContainer(component, containerSelector, insertOptions = {}) {
                         throw new Error(`在容器內找不到目標元素: ${targetSelector}`);
                     }
                     beforeTarget.parentNode.insertBefore(component, beforeTarget);
+                    // console.log(`組件已插入到容器內 ${targetSelector} 前面`);
                 } else {
                     // 插入到容器元素本身的前面
                     container.parentNode.insertBefore(component, container);
+                    // console.log(`組件已插入到 ${containerSelector} 元素前面`);
                 }
                 break;
                 
@@ -415,9 +453,11 @@ function appendToContainer(component, containerSelector, insertOptions = {}) {
                         throw new Error(`在容器內找不到目標元素: ${targetSelector}`);
                     }
                     afterTarget.parentNode.insertBefore(component, afterTarget.nextSibling);
+                    // console.log(`組件已插入到容器內 ${targetSelector} 後面`);
                 } else {
                     // 插入到容器元素本身的後面
                     container.parentNode.insertBefore(component, container.nextSibling);
+                    // console.log(`組件已插入到 ${containerSelector} 元素後面`);
                 }
                 break;
                 
@@ -429,21 +469,25 @@ function appendToContainer(component, containerSelector, insertOptions = {}) {
                         throw new Error(`在容器內找不到要替換的元素: ${targetSelector}`);
                     }
                     replaceTarget.parentNode.replaceChild(component, replaceTarget);
+                    // console.log(`組件已替換容器內的 ${targetSelector}`);
                 } else {
                     // 替換容器元素本身
                     container.parentNode.replaceChild(component, container);
+                    // console.log(`組件已替換 ${containerSelector} 元素`);
                 }
                 break;
                 
             case 'append':
             default:
                 container.appendChild(component);
+                // console.log(`組件已 append 到 ${containerSelector}`);
                 break;
         }
         
         return true;
         
     } catch (error) {
+        // console.error(`插入組件失敗:`, error.message);
         return false;
     }
 }
@@ -456,7 +500,11 @@ function appendToContainer(component, containerSelector, insertOptions = {}) {
 function checkContainersExist(containers) {
     return containers.every(container => {
         const element = document.querySelector(container.id);
-        return element !== null;
+        const exists = element !== null;
+        if (!exists) {
+            // console.log(`等待容器: ${container.id}`);
+        }
+        return exists;
     });
 }
 
@@ -472,14 +520,18 @@ function waitForContainers(containers, maxWaitTime = 10000) {
         
         // 立即檢查一次
         if (checkContainersExist(containers)) {
+            // console.log('✓ 所有容器已找到');
             resolve();
             return;
         }
+        
+        // console.log('等待容器元素出現...');
         
         // 使用 MutationObserver 監聽 DOM 變化
         const observer = new MutationObserver(() => {
             if (checkContainersExist(containers)) {
                 observer.disconnect();
+                // console.log('✓ 所有容器已找到');
                 resolve();
             } else if (Date.now() - startTime > maxWaitTime) {
                 observer.disconnect();
@@ -498,6 +550,7 @@ function waitForContainers(containers, maxWaitTime = 10000) {
             if (checkContainersExist(containers)) {
                 clearInterval(pollInterval);
                 observer.disconnect();
+                // console.log('✓ 所有容器已找到 (輪詢檢查)');
                 resolve();
             } else if (Date.now() - startTime > maxWaitTime) {
                 clearInterval(pollInterval);
@@ -514,6 +567,8 @@ function waitForContainers(containers, maxWaitTime = 10000) {
  */
 async function initInfoDisplay(config = DEFAULT_CONFIG) {
     try {
+        // console.log('開始初始化組件系統...');
+        
         // 根據配置選擇載入方式
         const loadMethod = config.loadMethod || 'standard';
         switch (loadMethod) {
@@ -533,8 +588,11 @@ async function initInfoDisplay(config = DEFAULT_CONFIG) {
             throw new Error('InfoDisplayAPIManager 載入失敗');
         }
         
+        // console.log('開始載入組件數據...');
+        
         // 獲取數據
         const data = await window.InfoDisplayAPIManager.getClothInfo(config.clothID, config.brand);
+        // console.log('數據載入完成:', config.clothID);
         
         // 創建並添加組件
         let successCount = 0;
@@ -543,13 +601,36 @@ async function initInfoDisplay(config = DEFAULT_CONFIG) {
             const success = appendToContainer(component, containerConfig.id, containerConfig.insertOptions);
             if (success) {
                 successCount++;
+                let statusText = `組件已添加到 ${containerConfig.id}`;
+                
+                if (containerConfig.collapsible) {
+                    statusText += ' (可折疊';
+                    if (containerConfig.defaultStates) {
+                        const states = containerConfig.defaultStates;
+                        const stateInfo = [];
+                        if (states.sizeTable !== undefined) stateInfo.push(`尺寸表:${states.sizeTable ? '展開' : '收合'}`);
+                        if (states.tryonReport !== undefined) stateInfo.push(`試穿資訊:${states.tryonReport ? '展開' : '收合'}`);
+                        if (states.attributes !== undefined) stateInfo.push(`商品屬性:${states.attributes ? '展開' : '收合'}`);
+                        statusText += ` - ${stateInfo.join(', ')}`;
+                    } else {
+                        statusText += ' - 使用預設狀態';
+                    }
+                    statusText += ')';
+                } else {
+                    statusText += ' (不可折疊)';
+                }
+                
+                // console.log(statusText);
             }
         }
+        
+        // console.log(`測試完成，成功創建 ${successCount}/${config.containers.length} 個組件`);
         
         // 返回創建的組件數量，供外部使用
         return { success: true, componentCount: successCount };
         
     } catch (error) {
+        // console.error('測試過程中發生錯誤:', error);
         return { success: false, error: error.message };
     }
 }
@@ -567,6 +648,8 @@ async function init(options = {}) {
             });
         }
         
+        // console.log('DOM 準備完成，等待容器元素...');
+        
         // 合併配置
         const config = { ...DEFAULT_CONFIG, ...options };
         
@@ -577,12 +660,15 @@ async function init(options = {}) {
         await initInfoDisplay(config);
         
     } catch (error) {
+        // console.error('初始化失敗:', error);
+        
         // 如果等待容器超時，嘗試繼續執行（用於調試）
         if (error.message.includes('等待容器超時')) {
+            // console.warn('容器等待超時，仍嘗試執行測試...');
             try {
                 await initInfoDisplay(options);
             } catch (testError) {
-                // Handle error silently
+                // console.error('強制執行測試也失敗:', testError);
             }
         }
     }
@@ -603,4 +689,4 @@ window.InfoDisplayDemo = {
 };
 
 // 移除自動初始化，防止重複渲染
-init({ loadMethod: 'idle' });
+// init({ loadMethod: 'idle' });
