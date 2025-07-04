@@ -132,10 +132,10 @@
 
 // 線上資源配置
 const ONLINE_RESOURCES = {
-    apiManager: '/info-display-reference-component/api-manager.js',
-    component: '/info-display-reference-component/index.js'
-    // apiManager: 'https://ts-size-info-component.vercel.app/api-manager.js',
-    // component: 'https://ts-size-info-component.vercel.app/index.js'
+    // apiManager: '/info-display-reference-component/api-manager.js',
+    // component: '/info-display-reference-component/index.js'
+    apiManager: 'https://ts-size-info-component.vercel.app/api-manager.js',
+    component: 'https://ts-size-info-component.vercel.app/index.js'
 };
 
 // 默認配置
