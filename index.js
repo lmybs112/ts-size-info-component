@@ -140,7 +140,7 @@ class InfoDisplayComponent extends HTMLElement {
     setApiData(data) {
         this.apiData = data;
         this.isDataLoaded = true;
-        console.log('組件接收到數據:', data);
+        // console.log('組件接收到數據:', data);
         
         // 渲染組件內容
         this.renderWithApiData();
@@ -151,7 +151,7 @@ class InfoDisplayComponent extends HTMLElement {
      */
     renderWithApiData() {
         if (!this.apiData) {
-            console.warn('沒有 API 數據，無法渲染');
+            // console.warn('沒有 API 數據，無法渲染');
             return;
         }
 
@@ -298,7 +298,7 @@ class InfoDisplayComponent extends HTMLElement {
             this.resizeObserver = new ResizeObserver(entries => {
                 for (let entry of entries) {
                     const containerWidth = entry.contentRect.width;
-                    console.log(`父容器寬度變化: ${containerWidth}px`);
+                    // console.log(`父容器寬度變化: ${containerWidth}px`);
                     this.updateLayout(containerWidth);
                 }
             });
@@ -307,25 +307,25 @@ class InfoDisplayComponent extends HTMLElement {
             const parentElement = this.parentElement;
             if (parentElement) {
                 this.resizeObserver.observe(parentElement);
-                console.log('ResizeObserver 已設置，監聽父容器');
+                // console.log('ResizeObserver 已設置，監聽父容器');
             } else {
-                console.log('找不到父元素，監聽組件本身');
+                // console.log('找不到父元素，監聽組件本身');
                 this.resizeObserver.observe(this);
             }
         } else {
             // 如果不支持 ResizeObserver，使用 window resize 作為後備
             window.addEventListener('resize', () => {
                 const parentWidth = this.parentElement ? this.parentElement.offsetWidth : this.offsetWidth;
-                console.log(`窗口調整，父容器寬度: ${parentWidth}px`);
+                // console.log(`窗口調整，父容器寬度: ${parentWidth}px`);
                 this.updateLayout(parentWidth);
             });
-            console.log('使用 window resize 後備方案');
+            // console.log('使用 window resize 後備方案');
         }
 
         // 初始化時也檢查一次
         setTimeout(() => {
             const parentWidth = this.parentElement ? this.parentElement.offsetWidth : this.offsetWidth;
-            console.log(`初始化父容器寬度: ${parentWidth}px`);
+            // console.log(`初始化父容器寬度: ${parentWidth}px`);
             this.updateLayout(parentWidth);
         }, 200);
     }
@@ -334,7 +334,7 @@ class InfoDisplayComponent extends HTMLElement {
     updateLayout(containerWidth) {
         const container = this.shadowRoot.querySelector('#inffits-info-display-reference-component');
         if (!container) {
-            console.log('找不到容器元素');
+            // console.log('找不到容器元素');
             return;
         }
 
@@ -344,12 +344,12 @@ class InfoDisplayComponent extends HTMLElement {
         // 根據父容器寬度添加相應的類
         if (containerWidth <= 768) {
             container.classList.add('mobile-layout');
-            console.log(`應用移動端佈局 (寬度: ${containerWidth}px)`);
+            // console.log(`應用移動端佈局 (寬度: ${containerWidth}px)`);
             // 檢查是否需要應用小型尺寸表樣式
             this.checkSmallSizeTableStyle();
         } else {
             container.classList.add('desktop-layout');
-            console.log(`應用桌面端佈局 (寬度: ${containerWidth}px)`);
+            // console.log(`應用桌面端佈局 (寬度: ${containerWidth}px)`);
             
             // 桌面端移除小型尺寸表樣式
             container.classList.remove('small-size-table');
@@ -398,7 +398,6 @@ class InfoDisplayComponent extends HTMLElement {
   font-family: "Chocolate Classical Sans", "Figtree", sans-serif;
   background-color: #fff;
   color: #000;
-  width: 100%;
 }
 
 #inffits-info-display-reference-component main {
@@ -1853,11 +1852,11 @@ border-color: transparent;
             
             // 如果容器寬度為 0，使用預設寬度
             if (squaresize === 0) {
-                console.log('SVG 容器寬度為 0，使用預設寬度 300px');
+                // console.log('SVG 容器寬度為 0，使用預設寬度 300px');
                 squaresize = 300;
             }
             
-            console.log('SVG 渲染尺寸:', squaresize, 'px');
+            // console.log('SVG 渲染尺寸:', squaresize, 'px');
 
             const derive_svg_circum = (svg_data, a, b, centerX, centerY) => {
                 let pathData = `M ${centerX} ${centerY - b} ` +
@@ -2125,7 +2124,7 @@ border-color: transparent;
                 
                 // 如果容器寬度為 0，表示可能被收合了，需要等待展開
                 if (containerWidth === 0) {
-                    console.log('SVG 容器寬度為 0，等待尺寸表展開後重新初始化');
+                    // console.log('SVG 容器寬度為 0，等待尺寸表展開後重新初始化');
                     
                     // 監聽尺寸表的展開事件
                     const sizeTableContent = this.shadowRoot.querySelector('.size-table-content');
@@ -2135,7 +2134,7 @@ border-color: transparent;
                                 if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
                                     const target = mutation.target;
                                     if (target.classList.contains('show')) {
-                                        console.log('尺寸表已展開，重新初始化 SVG');
+                                        // console.log('尺寸表已展開，重新初始化 SVG');
                                         observer.disconnect();
                                         // 延遲一下確保動畫完成
                                         setTimeout(() => {
@@ -2154,7 +2153,7 @@ border-color: transparent;
                     return;
                 }
 
-                console.log('SVG 容器寬度:', containerWidth, 'px，開始初始化 SVG');
+                // console.log('SVG 容器寬度:', containerWidth, 'px，開始初始化 SVG');
 
                 // 等待更長時間確保所有元素都創建完成
                 setTimeout(() => {
@@ -2746,13 +2745,13 @@ border-color: transparent;
         if (!svgContainer) return;
 
         const containerWidth = svgContainer.offsetWidth;
-        console.log('重新檢查 SVG 容器寬度:', containerWidth, 'px');
+        // console.log('重新檢查 SVG 容器寬度:', containerWidth, 'px');
 
         // 如果容器現在有寬度，但 SVG 內容為空或不正確，重新渲染
         if (containerWidth > 0) {
             const existingSVG = svgContainer.querySelector('svg');
             if (!existingSVG || existingSVG.getAttribute('width') === '0') {
-                console.log('重新渲染 SVG');
+                // console.log('重新渲染 SVG');
                 
                 // 觸發 SVG 重新初始化
                 if (this.initializeSVGDisplay) {
